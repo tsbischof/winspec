@@ -27,6 +27,8 @@ class CStruct(object):
                     for index, f in enumerate(value):
                         result.append(("{0}[{1}]".format(name, index),
                                       f.to_list()))
+                elif isinstance(value, CStruct):
+                    result.append((name, value.to_list()))
                 else:
                     result.append((name, value))
             except AttributeError:

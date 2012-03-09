@@ -239,19 +239,27 @@ class Winspec:
         self.__header = None
         self.__filename = filename
         self.__data_file = open(filename, "rb")
+        self.__x = None
+        self.__y = None
 
     def header(self):
         if self.__header == None:
             self.__header = cstruct.CStruct(winspec_header_t)
             self.__header.from_stream(self.__data_file)
+
+            if self.__data_file.tell() != 4100:
+                logging.error("Only read to {0}. "
+                              "The header should stop at {1}.".format(
+                                  self.__data_file.tell(), 4100))
+
         return(self.__header)
 
     def data(self):
         data_type = data_types[self.header().datatype]
 
-        n_frames = self.header().NumFrames
-        frame_width = self.header().xdim
-        frame_height = self.header().ydim
+        n_frames = self.n_frames()
+        frame_width = self.frame_width()
+        frame_height = self.frame_height()
 
         line_format = "{0}{1}".format(frame_width, data_type)
         logging.info("Reading {0} frames, at {1}x{2}.".format(
@@ -275,23 +283,83 @@ class Winspec:
 
     def x(self):
         # Get the calibration out and print the axis values.
-        pass
+        if self.__x:
+            return(self.__x)
+        
+        line = list()
+        for pixel_index in range(self.header().xdim):
+            result = 0
+            for power, coefficient in enumerate(
+                       self.header().x_calibration.polynom_coeff):
+                result += coefficient*(pixel_index**power)
+            line.append(result)
 
+        self.__x = line
+        return(line)
+                
     def y(self):
-        pass
+        if self.__y:
+            return(self.__y)
+        
+        line = list()
+        for pixel_index in range(self.header().xdim):
+            result = 0
+            for power, coefficient in enumerate(
+                       self.header().y_calibration.polynom_coeff):
+                result += coefficient*(pixel_index**power)
+            line.append(result)
 
+        self.__y = line
+        return(line)
+
+    def x_label(self):
+        return(self.header().x_calibration.string)
+
+    def n_frames(self):
+        return(self.header().NumFrames)
+
+    def frame_width(self):
+        return(self.header().xdim)
+
+    def frame_height(self):
+        return(self.header().ydim)
+
+    def t(self):
+        return(map(lambda x: x*self.header().exp_sec, range(self.n_frames())))
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    data = Winspec("../sample_data/TSB-01-152_scan_264nW_000.SPE")
-    data.header()
+    logging.basicConfig(level=logging.ERROR)
+##    logging.basicConfig(level=logging.DEBUG)
+    data = Winspec("../sample_data/TSB-01-152_photodarkening_000.SPE")
 ##    print(data.header())
-##    print(data.header())
-##    for frame_number, frame in enumerate(data.data()):
-##        print(frame_number)
-##        print(frame)
-##        plt.figure()
-##        plt.plot(frame)
-##        plt.show()
 
-        
+##    background = next(data.data())
+##    
+##    for frame_number, frame in enumerate(data.data()):
+##        print("{0:8d}/{1}".format(frame_number, data.n_frames()-1))
+##        plt.clf()
+##        plt.plot(data.x(), map(lambda x,y: x-y, frame, background))
+##        plt.xlim((min(data.x()), max(data.x())))
+##        plt.ylim((0, 150))
+##        plt.xlabel(data.x_label())
+##        plt.savefig("images/frame_{0:08d}.png".format(frame_number))
+    
+##    frames = list()
+##    for frame_number, frame in enumerate(data.data()):
+##        print("{0:8d}/{1}".format(frame_number, data.n_frames()-1))
+##        frames.append(frame)
+##
+##    plt.clf()
+##    wavelengths = data.x()
+##    times = data.t()
+##    
+##    plt.imshow(frames, extent=(min(wavelengths), max(wavelengths),
+##                               max(times), min(times)),
+##               vmin=500, vmax=800)
+##    plt.xlabel(data.x_label())
+##    plt.ylabel("Time/s")
+##    plt.show()
+##    
+##
+##        
+##
