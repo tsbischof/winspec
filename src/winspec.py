@@ -1,6 +1,7 @@
 import struct
 import re
 import logging
+import os
 
 import matplotlib.pyplot as plt
 
@@ -177,14 +178,14 @@ winspec_header_t = [
     ("SpecModel", (1, "B")),
     ("PulseBurstUsed", (1, "B")),
     ("PulseBurstCount", (1, "I")),
-    ("ulseBurstPeriod", (1, "d")),
+    ("PulseBurstPeriod", (1, "d")),
     ("PulseBracketUsed", (1, "B")),
     ("PulseBracketType", (1, "B")),
     ("PulseTimeConstFast", (1, "d")),
     ("PulseAmplitudeFast", (1, "d")),
     ("PulseTimeConstSlow", (1, "d")),
     ("PulseAmplitudeSlow", (1, "d")),
-    ("AnalogGain;", (1, "h")),
+    ("AnalogGain", (1, "h")),
     ("AvGainUsed", (1, "h")),
     ("AvGain", (1, "h")),
     ("lastvalue", (1, "h"))]
@@ -210,6 +211,8 @@ constants = {"HDRNAMEMAX": 120,
 data_types = ["", "f", "i", "h", "H"]
 camera_types = ["", "new120", "old120", "ST130", "ST121", "ST138", "DC131",
                 "ST133", "ST135", "VICCD", "ST117", "OMA3", "OMA4"]
+
+winspec_header = cstruct.CStruct(winspec_header_t)
 
 def parse_header(header):   
     parser = re.compile("\W*(?P<type>[A-Za-z^_^\[]+)\W+"
@@ -242,6 +245,8 @@ class Winspec:
         self.__x = None
         self.__y = None
 
+        self.header()
+
     def header(self):
         if self.__header == None:
             self.__header = cstruct.CStruct(winspec_header_t)
@@ -254,7 +259,7 @@ class Winspec:
 
         return(self.__header)
 
-    def data(self):
+    def frames(self):
         data_type = data_types[self.header().datatype]
 
         n_frames = self.n_frames()
@@ -327,11 +332,40 @@ class Winspec:
     def t(self):
         return(map(lambda x: x*self.header().exp_sec, range(self.n_frames())))
 
+    def exposure_time(self):
+        return(self.header().exp_sec)
+
+    def to_file(self, filename):
+        # Write the binary structure to file.
+        pass
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.ERROR)
 ##    logging.basicConfig(level=logging.DEBUG)
     data = Winspec("../sample_data/TSB-01-152_photodarkening_000.SPE")
-##    print(data.header())
+
+##    data_dir = "../sample_data"
+
+##    for filename in filter(lambda x: x.lower().endswith(".spe"),
+##                           os.listdir(data_dir)):
+##        print(filename)
+##        name_base = filename[:-4]
+##        try:
+##            os.mkdir(os.path.join(data_dir, name_base))
+##        except:
+##            pass
+##
+##        data = Winspec(os.path.join(data_dir, filename))
+##
+##        if data.frame_height() == 1:
+##            for frame_number, frame in enumerate(data.data()):
+##                plt.clf()
+##                plt.plot(data.x(), frame)
+##                plt.savefig(os.path.join(data_dir, name_base,
+##                            "frame_{0:08d}.png".format(frame_number)))
+##                
+                
+    print(data.header())
 
 ##    background = next(data.data())
 ##    

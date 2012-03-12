@@ -37,6 +37,9 @@ class CStruct(object):
 
         return(result)
 
+    def definition(self):
+        return(self.__definition)
+
 def add_tab(string, tabs=1):
     result = str()
     for line in string.split("\n"):
