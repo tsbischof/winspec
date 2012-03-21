@@ -216,7 +216,9 @@ winspec.header.lastvalue = fread(file, 1, 'int16');
 data_types = {'float32' 'int32' 'int16' 'uint16'};
 winspec.frames = fread(file, ...
     [winspec.frame_width()*winspec.frame_height()*winspec.n_frames()], ...
-    char(data_types(winspec.header.datatype)));
+    char(data_types(winspec.header.datatype+1)));
+% add 1 to the datatype to account for the difference between C (Winspec)
+% and Matlab indexing
 
 winspec.frames = reshape(winspec.frames, ...
     [winspec.frame_width() winspec.frame_height() winspec.n_frames()]);
