@@ -2,12 +2,13 @@ import struct
 import re
 import logging
 import os
+import collections
 
 import matplotlib.pyplot as plt
 
 import cstruct
 
-winspec_ROI_t = [
+winspec_v2_4_ROI_t = [
     ("startx", (1, "H")),
     ("endx", (1, "H")),
     ("groupx", (1, "H")),
@@ -15,7 +16,7 @@ winspec_ROI_t = [
     ("endy", (1, "H")),
     ("groupy", (1, "H"))]
 
-winspec_calibration_t = [
+winspec_v2_4_calibration_t = [
     ("offset", (1, "d")),
     ("factor", (1, "d")),
     ("current_unit", (1, "c")),
@@ -36,7 +37,7 @@ winspec_calibration_t = [
     ("calib_label", (81, "c")),
     ("expansion", (87, "c"))]
 
-winspec_header_t = [
+winspec_v2_4_header_t = [
     ("ControllerVersion", (1, "h")),
     ("LogicOutput", (1, "h")),
     ("AmpHiCapLowNoise", (1, "H")),
@@ -48,7 +49,7 @@ winspec_header_t = [
     ("yDimDet", (1, "H")),
     ("date", (10, "c")),
     ("VirtualChipFlag", (1, "h")),
-    ("Spare_1", (2, "c")),
+    ("Spare_1", (2, "b")),
     ("noscan", (1, "h")),
     ("DetTemperature", (1, "f")),
     ("DetType", (1, "h")),
@@ -128,14 +129,14 @@ winspec_header_t = [
     ("lavgexp", (1, "i")),
     ("ReadoutTime", (1, "f")),
     ("TriggeredModeFlag", (1, "h")),
-    ("Spare_2", (10, "c")),
+    ("Spare_2", (10, "b")),
     ("sw_version", (16, "c")),
     ("type", (1, "h")),
     ("flatFieldApplied", (1, "h")),
-    ("Spare_3", (16, "c")),
+    ("Spare_3", (16, "b")),
     ("kin_trig_mode", (1, "h")),
     ("dlabel", (16, "c")),
-    ("Spare_4", (436, "c")),
+    ("Spare_4", (436, "b")),
     ("PulseFileName", (120, "c")),
     ("AbsorbFileName", (120, "c")),
     ("NumExpRepeats", (1, "I")),
@@ -159,21 +160,21 @@ winspec_header_t = [
     ("clkspd", (1, "H")),
     ("interface_type", (1, "H")),
     ("NumROIsInExperiment", (1, "h")),
-    ("Spare_5", (16, "c")),
+    ("Spare_5", (16, "b")),
     ("controllerNum", (1, "H")),
     ("SWmade", (1, "H")),
     ("NumROI", (1, "h")),
-    ("ROI", (10, winspec_ROI_t)),
+    ("ROI", (10, winspec_v2_4_ROI_t)),
     ("FlatField", (120, "c")),
     ("background", (120, "c")),
     ("blemish", (120, "c")),
     ("file_header_ver", (1, "f")),
     ("YT_INFO", (1000, "c")),
     ("WinView_id", (1, "i")),
-    ("x_calibration", (1, winspec_calibration_t)),
-    ("y_calibration", (1, winspec_calibration_t)),
+    ("x_calibration", (1, winspec_v2_4_calibration_t)),
+    ("y_calibration", (1, winspec_v2_4_calibration_t)),
     ("Istring", (40, "c")),
-    ("Spare_6", (25, "c")),
+    ("Spare_6", (25, "b")),
     ("SpecType", (1, "B")),
     ("SpecModel", (1, "B")),
     ("PulseBurstUsed", (1, "B")),
@@ -208,11 +209,11 @@ constants = {"HDRNAMEMAX": 120,
              "ROIMAX": 10,
              "TIMEMAX": 7}
 
-data_types = ["", "f", "i", "h", "H"]
+data_types = ["f", "i", "h", "H"]
 camera_types = ["", "new120", "old120", "ST130", "ST121", "ST138", "DC131",
                 "ST133", "ST135", "VICCD", "ST117", "OMA3", "OMA4"]
 
-winspec_header = cstruct.CStruct(winspec_header_t)
+winspec_header = cstruct.CStruct(winspec_v2_4_header_t)
 
 def parse_header(header):   
     parser = re.compile("\W*(?P<type>[A-Za-z^_^\[]+)\W+"
@@ -238,58 +239,88 @@ def parse_header(header):
             continue
 
 class Winspec:
-    def __init__(self, filename):
-        self.__header = None
-        self.__filename = filename
-        self.__data_file = open(filename, "rb")
-        self.__x = None
-        self.__y = None
+    def __init__(self, filename, version=(2, 4)):
+        self._header = None
+        self._filename = filename
+        self._data_file = open(filename, "rb")
+        self._x = None
+        self._y = None
+        
+        self._frames = None
 
         self.header()
 
     def header(self):
-        if self.__header == None:
-            self.__header = cstruct.CStruct(winspec_header_t)
-            self.__header.from_stream(self.__data_file)
+        if self._header == None:
+            self._header = cstruct.CStruct(winspec_v2_4_header_t)
+            self._header.from_stream(self._data_file)
 
-            if self.__data_file.tell() != 4100:
+            if self._data_file.tell() != 4100:
                 logging.error("Only read to {0}. "
                               "The header should stop at {1}.".format(
-                                  self.__data_file.tell(), 4100))
+                                  self._data_file.tell(), 4100))
 
-        return(self.__header)
+        return(self._header)
 
-    def frames(self):
-        data_type = data_types[self.header().datatype]
+    def frames(self, iterator=False):
+        if iterator:
+            data_type = data_types[self.header().datatype]
 
-        n_frames = self.n_frames()
-        frame_width = self.frame_width()
-        frame_height = self.frame_height()
+            n_frames = self.n_frames()
+            frame_width = self.frame_width()
+            frame_height = self.frame_height()
 
-        line_format = "{0}{1}".format(frame_width, data_type)
-        logging.info("Reading {0} frames, at {1}x{2}.".format(
-            n_frames, frame_width, frame_height))
-        logging.info("Format for a line: {0}.".format(line_format))
+            line_format = "{0}{1}".format(frame_width, data_type)
+            logging.debug("Reading {0} frames, at {1}x{2}.".format(
+                n_frames, frame_width, frame_height))
+            logging.debug("Format for a line: {0}.".format(line_format))
 
-        for frame_number in range(n_frames):
-            logging.info("Reading frame {0}.".format(frame_number))
-            frame_data = list()
-            for line_number in range(frame_height):
-                logging.debug("Reading line {0}.".format(line_number))
-                raw_data = self.__data_file.read(struct.calcsize(line_format))
-                line_data = struct.unpack(line_format, raw_data)
+            for frame_number in range(n_frames):
+                logging.debug("Reading frame {0}.".format(frame_number))
+                frame_data = list()
+                for line_number in range(frame_height):
+                    logging.debug("Reading line {0}.".format(line_number))
+                    raw_data = self._data_file.read(struct.calcsize(
+                        line_format))
+                    line_data = struct.unpack(line_format, raw_data)
 
-                frame_data.append(line_data)
+                    frame_data.append(line_data)
 
-            if len(frame_data) == 1:
-                yield(frame_data[0])
-            else:
                 yield(frame_data)
+        else:
+            if not self._frames:
+                self._frames = list()
+                data_type = data_types[self.header().datatype]
+
+                n_frames = self.n_frames()
+                frame_width = self.frame_width()
+                frame_height = self.frame_height()
+
+                line_format = "{0}{1}".format(frame_width, data_type)
+                logging.debug("Reading {0} frames, at {1}x{2}.".format(
+                    n_frames, frame_width, frame_height))
+                logging.debug("Format for a line: {0}.".format(line_format))
+
+                for frame_number in range(n_frames):
+                    logging.debug("Reading frame {0}.".format(frame_number))
+                    frame_data = list()
+                    for line_number in range(frame_height):
+                        logging.debug("Reading line {0}.".format(line_number))
+                        raw_data = self._data_file.read(struct.calcsize(
+                            line_format))
+                        line_data = struct.unpack(line_format, raw_data)
+
+                        frame_data.append(line_data)
+
+                    self._frames.append(frame_data)
+
+            for frame in self._frames:
+                yield(frame)
 
     def x(self):
         # Get the calibration out and print the axis values.
-        if self.__x:
-            return(self.__x)
+        if self._x:
+            return(self._x)
         
         line = list()
         for pixel_index in range(self.header().xdim):
@@ -299,12 +330,12 @@ class Winspec:
                 result += coefficient*(pixel_index**power)
             line.append(result)
 
-        self.__x = line
+        self._x = line
         return(line)
                 
     def y(self):
-        if self.__y:
-            return(self.__y)
+        if self._y:
+            return(self._y)
         
         line = list()
         for pixel_index in range(self.header().xdim):
@@ -314,7 +345,7 @@ class Winspec:
                 result += coefficient*(pixel_index**power)
             line.append(result)
 
-        self.__y = line
+        self._y = line
         return(line)
 
     def x_label(self):
@@ -338,6 +369,37 @@ class Winspec:
     def to_file(self, filename):
         # Write the binary structure to file.
         pass
+
+def flatten(L):
+    for elem in L:
+        if isinstance(elem, collections.Iterable) \
+           and not isinstance(elem, basestring):
+            for sub_elem in flatten(elem):
+                yield(sub_elem)
+        else:
+            yield(elem)
+            
+
+def spectrum_to_winspec(spectrum, dst_stream):
+    height = len(spectrum)
+    width = len(spectrum[0])
+
+    for position, form, value in [(6, "h", width),
+                                  (18, "h", height),
+                                  (42, "h", width),
+                                  (108, "h", 1),
+                                  (656, "h", height),
+                                  (1446, "i", 1)]:
+
+        dst_stream.seek(position)
+        if isinstance(value, collections.Iterable):
+            dst_stream.write(struct.pack(form, *value))
+        else:
+            dst_stream.write(struct.pack(form, value))
+
+    dst_stream.seek(4100)
+    dst_stream.write(struct.pack("{0}I".format(height*width),
+                                 *map(int, flatten(spectrum))))
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.ERROR)

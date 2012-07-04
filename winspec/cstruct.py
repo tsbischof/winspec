@@ -63,7 +63,7 @@ but strings do not seem to work properly in this case."""
         if type(formtype) == type(str()):
             # We have a string format, so no recursion
             formstr = "{0}{1}".format(number, formtype)
-            logging.info("Reading {0} ({1}) from stream at offset {2}.".format(
+            logging.debug("Reading {0} ({1}) from stream at offset {2}.".format(
                 name, formstr, data.tell()))
 
             size = struct.calcsize(formstr)
@@ -91,7 +91,7 @@ but strings do not seem to work properly in this case."""
                 logging.debug("Character value.")
                 value = strip_null(bytes("".encode()).join(value).decode())
 
-            logging.info("{0}: {1}".format(name, value))
+            logging.debug("{0}: {1}".format(name, value))
                 
             setattr(target, name, value)
         else:
