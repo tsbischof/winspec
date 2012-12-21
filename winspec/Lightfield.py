@@ -193,6 +193,12 @@ class Lightfield(object):
             
         return(self._header)
 
+    def width(self):
+        return(self.header().xdim)
+
+    def height(self):
+        return(self.header().ydim)
+
     def footer(self):
         if not self._footer:
             with open(self.filename, "r") as data_file:
