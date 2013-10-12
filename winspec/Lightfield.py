@@ -193,10 +193,10 @@ class Lightfield(object):
             
         return(self._header)
 
-    def width(self):
+    def frame_width(self):
         return(self.header().xdim)
 
-    def height(self):
+    def frame_height(self):
         return(self.header().ydim)
 
     def footer(self):
@@ -275,17 +275,187 @@ class Lightfield(object):
                     "DataFormat")[0].getElementsByTagName(
                         "DataBlock")[0].getAttribute("pixelFormat")])
 
+    def exposure_times(self):
+        """
+        Return the start and stop times of exposure as a tuple pair.
+        If these are not present, return a null two-tuple.
+        """
+        start = None
+        stop = None
+
+        timestamps = self.footer().getElementsByTagName(
+            "MetaFormat")[0].getElementsByTagName(
+                "MetaBlock")[0].getElementsByTagName(
+                    "TimeStamp")
+
+        for timestamp in timestamps:
+            event = timestamp.getAttribute("event")
+            if event == "ExposureStarted":
+                start = timestamp.getAttribute("absoluteTime")
+            elif event == "ExposureEnded":
+                stop = timestamp.getAttribute("absoluteTime")
+        
+        return(start, stop)
+
+    def exposure_start(self):
+        return(self.exposure_times()[0])
+
+    def exposure_stop(self):
+        return(self.exposure_times()[1])
+
+    def exposure_time(self):
+        """
+        Return the exposure time for a frame, in ms.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataHistories")[0].getElementsByTagName(
+                    "DataHistory")[0].getElementsByTagName(
+                        "Origin")[0].getElementsByTagName(
+                            "Experiment")[0].getElementsByTagName(
+                                "Devices")[0].getElementsByTagName(
+                                    "Cameras")[0].getElementsByTagName(
+                                        "Camera")[0].getElementsByTagName(
+                                            "ShutterTiming")[0].getElementsByTagName(
+                                                "ExposureTime")[0].childNodes[0]
+            return(value.data)
+        except:
+            return(None)
+
+    def gain(self):
+        """
+        Return the gain setting.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataHistories")[0].getElementsByTagName(
+                    "DataHistory")[0].getElementsByTagName(
+                        "Origin")[0].getElementsByTagName(
+                            "Experiment")[0].getElementsByTagName(
+                                "Devices")[0].getElementsByTagName(
+                                    "Cameras")[0].getElementsByTagName(
+                                        "Camera")[0].getElementsByTagName(
+                                            "Adc")[0].getElementsByTagName(
+                                                "AnalogGain")[0].childNodes[0]
+            return(value.data)
+        except:
+            return(None)
+
+    def ad_rate(self):
+        """
+        Return the A/D conversion rate, in MHz.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataHistories")[0].getElementsByTagName(
+                    "DataHistory")[0].getElementsByTagName(
+                        "Origin")[0].getElementsByTagName(
+                            "Experiment")[0].getElementsByTagName(
+                                "Devices")[0].getElementsByTagName(
+                                    "Cameras")[0].getElementsByTagName(
+                                        "Camera")[0].getElementsByTagName(
+                                            "Adc")[0].getElementsByTagName(
+                                                "Speed")[0].childNodes[0]
+            return(value.data)
+        except:
+            return(None)
+
+    def frame_rate(self):
+        """
+        Return the frame rate of acquisition.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataHistories")[0].getElementsByTagName(
+                    "DataHistory")[0].getElementsByTagName(
+                        "Origin")[0].getElementsByTagName(
+                            "Experiment")[0].getElementsByTagName(
+                                "Devices")[0].getElementsByTagName(
+                                    "Cameras")[0].getElementsByTagName(
+                                        "Camera")[0].getElementsByTagName(
+                                            "Acquisition")[0].getElementsByTagName(
+                                                "FrameRate")[0].childNodes[0]
+            return(value.data)
+        except:
+            return(None)
+
+    def temperature_set(self):
+        """
+        Return the set temperature of the sensor.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataHistories")[0].getElementsByTagName(
+                    "DataHistory")[0].getElementsByTagName(
+                        "Origin")[0].getElementsByTagName(
+                            "Experiment")[0].getElementsByTagName(
+                                "Devices")[0].getElementsByTagName(
+                                    "Cameras")[0].getElementsByTagName(
+                                        "Camera")[0].getElementsByTagName(
+                                            "Sensor")[0].getElementsByTagName(
+                                                "Temperature")[0].getElementsByTagName(
+                                                    "SetPoint")[0].childNodes[0]
+            return(value.data)
+        except:
+            return(None)
+
+    def temperature_read(self):
+        """
+        Return the read temperature of the sensor.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataHistories")[0].getElementsByTagName(
+                    "DataHistory")[0].getElementsByTagName(
+                        "Origin")[0].getElementsByTagName(
+                            "Experiment")[0].getElementsByTagName(
+                                "Devices")[0].getElementsByTagName(
+                                    "Cameras")[0].getElementsByTagName(
+                                        "Camera")[0].getElementsByTagName(
+                                            "Sensor")[0].getElementsByTagName(
+                                                "Temperature")[0].getElementsByTagName(
+                                                    "Reading")[0].childNodes[0]
+            return(value.data)
+        except:
+            return(None)
+
+    def background_file(self):
+        """
+        Return the background file used for the acquisition.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataHistories")[0].getElementsByTagName(
+                    "DataHistory")[0].getElementsByTagName(
+                        "Origin")[0].getElementsByTagName(
+                            "Experiment")[0].getElementsByTagName(
+                                "OnlineCorrections")[0].getElementsByTagName(
+                                    "BackgroundCorrection")[0].getElementsByTagName(
+                                        "ReferenceFile")[0].childNodes[0]
+            return(value.data)
+        except:
+            return(None)
+
+##    def readout_time(self):
+##        """
+##        Return the readout time of a frame.
+##        """
+##        return(None)
+
 if __name__ == "__main__":
-    image = Lightfield("/home/tsbischof/Documents/"
-                       "data/microscopy/20120523_InGaAs/"
-                       "20120525/solution_emission 2012 "
-                       "May 25 15_41_39 125.spe")
+    image = Lightfield("lightfield_test.spe")
 
-##    print(image.header())
-##    print(image.footer())
-##    print(image.pixel_format())
-##    print(image.n_frames(), image.frame_height(), image.frame_width())
-    for index, frame in zip(range(3), image.frames()):
-        print(list(frame.regions[0].data())[0])
+    print(image.header())
+    print(image.footer())
+    print(image.pixel_format())
+    print(image.frame_height(), image.frame_width())
+    print(image.exposure_times())
+    print(image.exposure_time(), image.gain(), image.ad_rate())
+    print(image.frame_rate())
+    print(image.temperature_read(), image.temperature_set())
+    print(image.background_file())
+##    print(image.footer().toprettyxml())
+##    for index, frame in zip(range(3), image.frames()):
+##        print(list(frame.regions[0].data())[0])
 
-    a = image.frame_formats()
+##    a = image.frame_formats()
