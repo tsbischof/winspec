@@ -11,6 +11,7 @@ designed to:
 import os
 import csv
 import re
+import getpass
 import logging
 from xml.parsers.expat import ExpatError
 
@@ -63,7 +64,8 @@ def write_metadata_database(spe, database_filename):
             ("Exposure time", "exposure_time"),
             ("Gain", "gain"),
             ("AD rate", "ad_rate"),
-            ("Frame rate", "frame_rate"), 
+            ("Frame rate", "frame_rate"),
+            ("Readout Time", "readout_time"),
             ("Temperature set", "temperature_set"),
             ("Temperature read", "temperature_read"),
             ("Background file", "background_file")]
@@ -90,10 +92,15 @@ def write_metadata_database(spe, database_filename):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    
-    spe_directory = r"E:\raw_data"
-    tiff_directory = spe_directory
-    report_filename = r"C:\Users\Oliver\Desktop\data_processing\thomas_script_results\oliver.csv"
+
+    if getpass.getuser() == "tsbischof":
+        spe_directory = "/home/tsbischof/src/winspec"
+        tiff_directory = spe_directory
+        report_filename = "/home/tsbischof/src/winspec/scripts/oliver.csv"
+    else:
+        spe_directory = r"E:\raw_data"
+        tiff_directory = spe_directory
+        report_filename = r"C:\Users\Oliver\Desktop\data_processing\thomas_script_results\oliver.csv"
 
     spe_files = get_files(spe_directory, "spe")
     tiff_files = get_files(spe_directory, "tiff")

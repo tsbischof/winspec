@@ -439,6 +439,26 @@ class Lightfield(object):
         except:
             return(None)
 
+    def readout_time(self):
+        """
+        Return the time required to read out a frame, in ms.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataHistories")[0].getElementsByTagName(
+                    "DataHistory")[0].getElementsByTagName(
+                        "Origin")[0].getElementsByTagName(
+                            "Experiment")[0].getElementsByTagName(
+                                "Devices")[0].getElementsByTagName(
+                                    "Cameras")[0].getElementsByTagName(
+                                        "Camera")[0].getElementsByTagName(
+                                            "ReadoutControl")[0].getElementsByTagName(
+                                                "Time")[0].childNodes[0]
+            return(value.data)
+        except:
+            return(None)
+
+
 ##    def readout_time(self):
 ##        """
 ##        Return the readout time of a frame.
@@ -457,6 +477,7 @@ if __name__ == "__main__":
     print(image.frame_rate())
     print(image.temperature_read(), image.temperature_set())
     print(image.background_file())
+    print(image.readout_time())
 ##    print(image.footer().toprettyxml())
 ##    for index, frame in zip(range(3), image.frames()):
 ##        print(list(frame.regions[0].data())[0])
