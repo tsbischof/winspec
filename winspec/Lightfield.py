@@ -283,10 +283,13 @@ class Lightfield(object):
         start = None
         stop = None
 
-        timestamps = self.footer().getElementsByTagName(
-            "MetaFormat")[0].getElementsByTagName(
-                "MetaBlock")[0].getElementsByTagName(
-                    "TimeStamp")
+        try:
+            timestamps = self.footer().getElementsByTagName(
+                "MetaFormat")[0].getElementsByTagName(
+                    "MetaBlock")[0].getElementsByTagName(
+                        "TimeStamp")
+        except IndexError:
+            timestamps = []
 
         for timestamp in timestamps:
             event = timestamp.getAttribute("event")

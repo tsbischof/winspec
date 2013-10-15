@@ -11,23 +11,29 @@ designed to:
 import os
 import csv
 import re
+import logging
+from xml.parsers.expat import ExpatError
 
 import winspec
 
 def get_files(search_root, suffix):
+    logging.info("Searching for {} files.".format(suffix))
     parser = re.compile("{}$".format(suffix),
                         re.IGNORECASE)
     
     for root, dirs, filenames in os.walk(search_root):
         for filename in filenames:
             if parser.search(filename):
-                yield(os.path.join(root, filename))
+                name = os.path.join(root, filename)
+                logging.debug("Found {0}".format(name))
+                yield(name)
 
 def match_spe_tiff_files(spe_files, tiff_files):
     """
     For each spe file, find any associated tiff file by checking that they
     share the same filename.
     """
+    logging.info("Matching spe and tiff files.")
     spe = dict()
 
     my_spe_files = list(spe_files)
@@ -50,6 +56,8 @@ def write_metadata_database(spe, database_filename):
     For each spe file, write an entry to a csv file which includes the pertinent
     metadata.
     """
+    logging.info("Writing database of metadata of {} files.".format(len(
+        spe.keys())))
     keys = [("Exposure start", "exposure_start"),
             ("Exposure stop", "exposure_stop"),
             ("Exposure time", "exposure_time"),
@@ -60,32 +68,38 @@ def write_metadata_database(spe, database_filename):
             ("Temperature read", "temperature_read"),
             ("Background file", "background_file")]
     
-    with open(database_filename, "w") as stream_out:
+    with open(database_filename, "wb") as stream_out:
         writer = csv.writer(stream_out)
 
         fields = ["Filename"] + list(map(lambda x: x[0], keys))
         writer.writerow(fields)
         
-        for filename in spe.keys():
-            w = winspec.Lightfield(filename)
+        for filename in sorted(spe.keys()):
+            try:
+                w = winspec.Lightfield(filename)
 
-            my_row = [filename]
-            
-            for name, key in keys:
-                my_row.append(getattr(w, key)())
+                my_row = [filename]
+                
+                for name, key in keys:
+                    my_row.append(getattr(w, key)())
 
-            writer.writerow(my_row)        
+                writer.writerow(my_row)
+            except ExpatError:
+                print("Failed to parse xml for {}".format(filename))
+                continue
 
 if __name__ == "__main__":
-    spe_directory = "/home/tsbischof/src/winspec"
-    tiff_directory = "/home/tsbischof/Documents/src/winspec"
+    logging.basicConfig(level=logging.INFO)
+    
+    spe_directory = r"E:\raw_data"
+    tiff_directory = spe_directory
+    report_filename = r"C:\Users\Oliver\Desktop\data_processing\thomas_script_results\oliver.csv"
 
     spe_files = get_files(spe_directory, "spe")
     tiff_files = get_files(spe_directory, "tiff")
 
     spe_database = match_spe_tiff_files(spe_files, tiff_files)
 
-    write_metadata_database(spe_database,
-                            "/home/tsbischof/src/winspec/scripts/oliver.csv")
+    write_metadata_database(spe_database, report_filename)
 ##    write_metadata_to_tiff(spe_database)
     

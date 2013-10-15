@@ -4,7 +4,7 @@ import logging
 import os
 import collections
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 import cstruct
 
