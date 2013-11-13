@@ -68,7 +68,9 @@ def write_metadata_database(spe, database_filename):
             ("Readout Time", "readout_time"),
             ("Temperature set", "temperature_set"),
             ("Temperature read", "temperature_read"),
-            ("Background file", "background_file")]
+            ("Background file", "background_file"),
+            ("Number of frames", "n_frames"),
+            ("Frames per readout", "frames_per_readout")]
     
     with open(database_filename, "wb") as stream_out:
         writer = csv.writer(stream_out)

@@ -7,8 +7,12 @@ classdef Winspec
     methods
         function X = x(obj)
             % Return the x axis from the calibration
-            X = polyval(fliplr(obj.header.x_calibration.polynom_coeff'), ...
-                1:obj.frame_width());
+            poly = fliplr( ...
+                   obj.header.x_calibration.polynom_coeff( ...
+                        1:(obj.header.x_calibration.polynom_order+1))');
+            pixels = 1:obj.frame_width();
+
+            X = polyval(poly, pixels);
         end
         
         function T = t(obj)

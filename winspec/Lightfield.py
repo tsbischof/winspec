@@ -268,6 +268,20 @@ class Lightfield(object):
 
         return(self._frame_formats)
 
+    def n_frames(self):
+        """
+        Return the number of frames in the exposure.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataFormat")[0].getElementsByTagName(
+                    "DataBlock")[0].attributes["count"]
+            return(value.value)
+        except IndexError:
+            return(None)
+
+            
+
     def pixel_format(self):
         return(
             DATATYPES[
@@ -458,16 +472,29 @@ class Lightfield(object):
         except:
             return(None)
 
-
-##    def readout_time(self):
-##        """
-##        Return the readout time of a frame.
-##        """
-##        return(None)
+    def frames_per_readout(self):
+        """
+        Return the number of frames exposed per frame read out.
+        """
+        try:
+            value = self.footer().getElementsByTagName(
+                "DataHistories")[0].getElementsByTagName(
+                    "DataHistory")[0].getElementsByTagName(
+                        "Origin")[0].getElementsByTagName(
+                            "Experiment")[0].getElementsByTagName(
+                                "Devices")[0].getElementsByTagName(
+                                    "Cameras")[0].getElementsByTagName(
+                                        "Camera")[0].getElementsByTagName(
+                                            "Acquisition")[0].getElementsByTagName(
+                                                "FramesPerReadout")[0].childNodes[0]
+            return(value.data)
+        except:
+            return(None)
 
 if __name__ == "__main__":
     image = Lightfield("lightfield_test.spe")
 
+    print(image.n_frames())
     print(image.header())
     print(image.footer())
     print(image.pixel_format())
@@ -478,6 +505,7 @@ if __name__ == "__main__":
     print(image.temperature_read(), image.temperature_set())
     print(image.background_file())
     print(image.readout_time())
+    print(image.frames_per_readout())
 ##    print(image.footer().toprettyxml())
 ##    for index, frame in zip(range(3), image.frames()):
 ##        print(list(frame.regions[0].data())[0])
