@@ -26,7 +26,7 @@ winspec_v2_4_calibration_t = [
     ("calib_valid", (1, "c")),
     ("input_unit", (1, "c")),
     ("polynom_unit", (1, "c")),
-    ("polynom_order", (1, "c")),
+    ("polynom_order", (1, "b")),
     ("calib_count", (1, "c")),
     ("pixel_position", (10, "d")),
     ("calib_value", (10, "d")),
@@ -327,7 +327,8 @@ class Winspec:
             result = 0
             for power, coefficient in enumerate(
                        self.header().x_calibration.polynom_coeff):
-                result += coefficient*(pixel_index**power)
+                if power < self.header().x_calibration.polynom_order:
+                    result += coefficient*(pixel_index**power)
             line.append(result)
 
         self._x = line
