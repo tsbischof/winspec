@@ -358,28 +358,13 @@ class Winspec:
             result = 0
             for power, coefficient in enumerate(
                        self.header().x_calibration.polynom_coeff):
-                if power < self.header().x_calibration.polynom_order:
+                if power <= self.header().x_calibration.polynom_order:
                     result += coefficient*(pixel_index**power)
             line.append(result)
 
         self._x = line
         return(line)
                 
-    def y(self):
-        if self._y:
-            return(self._y)
-        
-        line = list()
-        for pixel_index in range(self.header().xdim):
-            result = 0
-            for power, coefficient in enumerate(
-                       self.header().y_calibration.polynom_coeff):
-                result += coefficient*(pixel_index**power)
-            line.append(result)
-
-        self._y = line
-        return(line)
-
     def x_label(self):
         return(self.header().x_calibration.string)
 

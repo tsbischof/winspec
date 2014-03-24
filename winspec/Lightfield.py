@@ -307,11 +307,9 @@ class Lightfield(object):
             value = self.footer().getElementsByTagName(
                 "DataFormat")[0].getElementsByTagName(
                     "DataBlock")[0].attributes["count"]
-            return(value.value)
+            return(int(value.value))
         except IndexError:
             return(None)
-
-            
 
     def pixel_format(self):
         return(
