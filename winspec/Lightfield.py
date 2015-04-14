@@ -519,24 +519,3 @@ class Lightfield(object):
             return(value.data)
         except:
             return(None)
-
-if __name__ == "__main__":
-    image = Lightfield("lightfield_test.spe")
-
-    print(image.n_frames())
-    print(image.header())
-    print(image.footer())
-    print(image.pixel_format())
-    print(image.frame_height(), image.frame_width())
-    print(image.exposure_times())
-    print(image.exposure_time(), image.gain(), image.ad_rate())
-    print(image.frame_rate())
-    print(image.temperature_read(), image.temperature_set())
-    print(image.background_file())
-    print(image.readout_time())
-    print(image.frames_per_readout())
-##    print(image.footer().toprettyxml())
-##    for index, frame in zip(range(3), image.frames()):
-##        print(list(frame.regions[0].data())[0])
-
-##    a = image.frame_formats()
