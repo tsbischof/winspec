@@ -1,6 +1,6 @@
 import setuptools
 
-setuptool.setup(name="winspec",
+setuptools.setup(name="winspec",
       version="1.1.0",
       author="Thomas Bischof", 
       author_email="tsbischof@gmail.com",
