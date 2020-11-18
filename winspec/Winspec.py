@@ -37,7 +37,7 @@ import collections
 
 #import matplotlib.pyplot as plt
 
-import cstruct
+from . import cstruct
 
 winspec_v2_4_ROI_t = [
     ("startx", (1, "H")),

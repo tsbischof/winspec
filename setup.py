@@ -1,10 +1,11 @@
-from distutils.core import setup
+import setuptools
 
-setup(name="winspec",
-      version="1.0",
+setuptools.setup(name="winspec",
+      version="1.1.0",
       author="Thomas Bischof", 
-      author_email="tbischof@mit.edu",
-      packages=["winspec"],
-      scripts=["scripts/lightfield_metadata_oliver.py"])
+      author_email="tsbischof@gmail.com",
+      packages=setuptools.find_packages(),
+      url="https://github.com/tsbischof/winspec"
+)
       
       
